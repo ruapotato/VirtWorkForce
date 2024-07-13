@@ -17,7 +17,6 @@ class WorkerBlock:
     def __init__(self, id: str, type: str, personality: str = "", prompt: str = "", condition: str = "", model: str = ""):
         self.id = id
         self.type = type
-        self.model = model
         self.personality = personality
         self.prompt = prompt
         self.condition = condition
@@ -64,14 +63,6 @@ class WorkerBlock:
                 return {"output": f"Error: {str(e)}"}
         else:
             return {"output": f"Error: Unknown node type {self.type}"}
-
-def load_workflow(filename: str) -> Dict[str, Any]:
-    with open(filename, 'r') as file:
-        return yaml.safe_load(file)
-
-def save_workflow(workflow: Dict[str, Any], filename: str):
-    with open(filename, 'w') as file:
-        yaml.dump(workflow, file)
 
 @app.route('/')
 def index():
@@ -131,8 +122,8 @@ def execute_workflow():
 
         input_data = []
         for connection in workflow['connections']:
-            if str(connection['to']) == str(node_id):
-                input_data.append(execute_node(connection['from']).get('output', ''))
+            if str(connection['target']) == str(node_id):
+                input_data.append(execute_node(connection['source']).get('output', ''))
         
         input_str = '\n'.join(input_data)
         results[str(node_id)] = workers[node_id].execute(input_str.strip())
@@ -184,6 +175,14 @@ def list_workflows():
     workflows = [f for f in os.listdir('workflows') if f.endswith('.yaml')]
     app.logger.debug(f"Found workflows: {workflows}")
     return jsonify(workflows)
+
+def load_workflow(filename: str) -> Dict[str, Any]:
+    with open(filename, 'r') as file:
+        return yaml.safe_load(file)
+
+def save_workflow(workflow: Dict[str, Any], filename: str):
+    with open(filename, 'w') as file:
+        yaml.dump(workflow, file)
 
 if __name__ == '__main__':
     if not os.path.exists('workflows'):

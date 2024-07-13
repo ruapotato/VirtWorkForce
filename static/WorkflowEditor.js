@@ -1,3 +1,8 @@
+import { NodeManager } from './NodeManager.js';
+import { ConnectionManager } from './ConnectionManager.js';
+import { WorkflowIO } from './WorkflowIO.js';
+import { ExecutionManager } from './ExecutionManager.js';
+
 export class WorkflowEditor {
     constructor() {
         this.nodes = [];
@@ -16,25 +21,35 @@ export class WorkflowEditor {
         this.jsPlumbInstance = null;
         this.isJSPlumbInitialized = false;
 
+        this.nodeManager = new NodeManager(this);
+        this.connectionManager = new ConnectionManager(this);
+        this.workflowIO = new WorkflowIO(this);
+        this.executionManager = new ExecutionManager(this);
+
         this.initializeJSPlumb();
 
-        this.addNodeButton.addEventListener('click', () => this.addNode('regular'));
-        this.addPromptNodeButton.addEventListener('click', () => this.addNode('prompt'));
-        this.addDisplayNodeButton.addEventListener('click', () => this.addNode('display'));
-        this.addIfElseNodeButton.addEventListener('click', () => this.addNode('if_else'));
-        this.saveWorkflowButton.addEventListener('click', () => this.saveWorkflow());
-        this.loadWorkflowSelect.addEventListener('change', (e) => this.loadWorkflow(e.target.value));
-        this.playButton.addEventListener('click', () => this.playWorkflow());
-        this.stopButton.addEventListener('click', () => this.stopWorkflow());
+        this.addNodeButton.addEventListener('click', () => this.nodeManager.addNode('regular'));
+        this.addPromptNodeButton.addEventListener('click', () => this.nodeManager.addNode('prompt'));
+        this.addDisplayNodeButton.addEventListener('click', () => this.nodeManager.addNode('display'));
+        this.addIfElseNodeButton.addEventListener('click', () => this.nodeManager.addNode('if_else'));
+        this.saveWorkflowButton.addEventListener('click', () => this.workflowIO.saveWorkflow());
+        this.loadWorkflowSelect.addEventListener('change', (e) => this.workflowIO.loadWorkflow(e.target.value));
+        this.playButton.addEventListener('click', () => this.executionManager.playWorkflow());
+        this.stopButton.addEventListener('click', () => this.executionManager.stopWorkflow());
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        this.canvas.addEventListener('wheel', (e) => this.handleZoom(e));
 
+        this.isPanning = false;
+        this.lastX = 0;
+        this.lastY = 0;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.scale = 1;
+        this.availableModels = [];
         this.fetchAvailableModels();
-        this.updateWorkflowList();
-
-        // Initialize WebSocket connection
-        this.socket = io();
-        this.socket.on('node_active', (data) => this.highlightActiveNode(data.node_id));
-        this.socket.on('node_result', (data) => this.updateNodeWithResult(data.node_id, data.result));
-        this.socket.on('execution_finished', () => this.onExecutionFinished());
+        this.workflowIO.updateWorkflowList();
     }
 
     initializeJSPlumb() {
@@ -52,7 +67,9 @@ export class WorkflowEditor {
             this.jsPlumbInstance.bind("connection", (info) => {
                 this.connections.push({
                     source: info.sourceId,
-                    target: info.targetId
+                    target: info.targetId,
+                    sourceEndpoint: info.sourceEndpoint.getParameter('portType'),
+                    targetEndpoint: info.targetEndpoint.getParameter('portType')
                 });
             });
 
@@ -61,193 +78,63 @@ export class WorkflowEditor {
         });
     }
 
-    addNode(type) {
-        if (!this.isJSPlumbInitialized) {
-            console.log("JSPlumb is not initialized yet. Waiting...");
-            setTimeout(() => this.addNode(type), 100);
-            return;
+    handleMouseDown(e) {
+        if (e.button === 1) { // Middle mouse button
+            this.isPanning = true;
+            this.lastX = e.clientX;
+            this.lastY = e.clientY;
+            e.preventDefault();
+        } else if (e.target.classList.contains('output-port')) {
+            this.connectionManager.startConnectionDrag(e);
         }
-
-        const nodeId = `node_${Date.now()}`;
-        const node = document.createElement('div');
-        node.id = nodeId;
-        node.className = `node ${type}-node`;
-        node.style.left = `${Math.random() * (this.canvas.clientWidth - 100)}px`;
-        node.style.top = `${Math.random() * (this.canvas.clientHeight - 100)}px`;
-
-        let innerHTML = `<div class="node-header">${type.charAt(0).toUpperCase() + type.slice(1)} Node</div>`;
-
-        switch (type) {
-            case 'prompt':
-                innerHTML += '<textarea placeholder="Enter your prompt"></textarea>';
-                break;
-            case 'display':
-                innerHTML += '<div class="display-content"></div>';
-                break;
-            case 'if_else':
-                innerHTML += '<input type="text" placeholder="Enter condition">';
-                break;
-            case 'regular':
-                innerHTML += `
-                    <input type="text" placeholder="Personality">
-                    <select class="model-select">
-                        <option value="">Select a model</option>
-                        ${this.availableModels ? this.availableModels.map(model => `<option value="${model}">${model}</option>`).join('') : ''}
-                    </select>
-                `;
-                break;
-        }
-
-        node.innerHTML = innerHTML;
-        this.canvas.appendChild(node);
-
-        this.jsPlumbInstance.draggable(nodeId, {
-            grid: [10, 10]
-        });
-
-        if (type !== 'display') {
-            this.jsPlumbInstance.addEndpoint(nodeId, {
-                anchor: "Right",
-                isSource: true,
-                connectionsDetachable: false
-            });
-        }
-
-        if (type !== 'prompt') {
-            this.jsPlumbInstance.addEndpoint(nodeId, {
-                anchor: "Left",
-                isTarget: true,
-                connectionsDetachable: false
-            });
-        }
-
-        this.nodes.push({ id: nodeId, type: type });
     }
 
-    saveWorkflow() {
-        const workflow = {
-            name: this.workflowNameInput.value,
-            nodes: this.nodes.map(node => {
-                const nodeElement = document.getElementById(node.id);
-                const nodeData = {
-                    id: node.id,
-                    type: node.type,
-                    x: parseInt(nodeElement.style.left),
-                    y: parseInt(nodeElement.style.top)
-                };
+    handleMouseMove(e) {
+        if (this.isPanning) {
+            const dx = e.clientX - this.lastX;
+            const dy = e.clientY - this.lastY;
+            this.offsetX += dx;
+            this.offsetY += dy;
+            this.lastX = e.clientX;
+            this.lastY = e.clientY;
+            this.updateCanvasTransform();
+        }
+        this.connectionManager.drag(e);
+    }
 
-                if (node.type === 'prompt') {
-                    nodeData.prompt = nodeElement.querySelector('textarea').value;
-                } else if (node.type === 'if_else') {
-                    nodeData.condition = nodeElement.querySelector('input').value;
-                } else if (node.type === 'regular') {
-                    nodeData.personality = nodeElement.querySelector('input').value;
-                    nodeData.model = nodeElement.querySelector('select').value;
-                }
+    handleMouseUp(e) {
+        if (e.button === 1) {
+            this.isPanning = false;
+        }
+        this.connectionManager.stopDragging(e);
+    }
 
-                return nodeData;
-            }),
-            connections: this.connections
-        };
+    handleZoom(e) {
+        e.preventDefault();
+        const delta = e.deltaY;
+        const zoomFactor = 0.1;
+        const oldScale = this.scale;
+        this.scale += delta > 0 ? -zoomFactor : zoomFactor;
+        this.scale = Math.max(0.1, Math.min(this.scale, 2));  // Limit zoom between 0.1x and 2x
         
-        console.log("Saving workflow:", workflow);
+        const scaleChange = this.scale / oldScale;
         
-        fetch('/api/save_workflow', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(workflow)
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-            this.updateWorkflowList();
-        })
-        .catch(error => console.error('Error:', error));
-    }
-
-    loadWorkflow(filename) {
-        if (!filename) return;
-
-        fetch(`/api/load_workflow/${filename}`)
-            .then(response => response.json())
-            .then(workflow => {
-                this.nodes = [];
-                this.connections = [];
-                this.canvas.innerHTML = '';
-                
-                workflow.nodes.forEach(node => {
-                    this.nodes.push(node);
-                    this.renderNode(node);
-                });
-
-                this.connections = workflow.connections;
-                this.jsPlumbInstance.reset();
-                this.connections.forEach(conn => {
-                    this.jsPlumbInstance.connect({
-                        source: conn.source,
-                        target: conn.target
-                    });
-                });
-
-                this.workflowNameInput.value = workflow.name;
-                
-                console.log("Loaded workflow:", workflow);
-            })
-            .catch(error => console.error('Error:', error));
-    }
-
-    renderNode(node) {
-        const nodeElement = document.createElement('div');
-        nodeElement.id = node.id;
-        nodeElement.className = `node ${node.type}-node`;
-        nodeElement.style.left = `${node.x}px`;
-        nodeElement.style.top = `${node.y}px`;
-
-        let innerHTML = `<div class="node-header">${node.type.charAt(0).toUpperCase() + node.type.slice(1)} Node</div>`;
-
-        switch (node.type) {
-            case 'prompt':
-                innerHTML += `<textarea placeholder="Enter your prompt">${node.prompt || ''}</textarea>`;
-                break;
-            case 'display':
-                innerHTML += '<div class="display-content"></div>';
-                break;
-            case 'if_else':
-                innerHTML += `<input type="text" placeholder="Enter condition" value="${node.condition || ''}">`;
-                break;
-            case 'regular':
-                innerHTML += `
-                    <input type="text" placeholder="Personality" value="${node.personality || ''}">
-                    <select class="model-select">
-                        <option value="">Select a model</option>
-                        ${this.availableModels ? this.availableModels.map(model => `<option value="${model}" ${node.model === model ? 'selected' : ''}>${model}</option>`).join('') : ''}
-                    </select>
-                `;
-                break;
-        }
-
-        nodeElement.innerHTML = innerHTML;
-        this.canvas.appendChild(nodeElement);
-
-        this.jsPlumbInstance.draggable(node.id, {
-            grid: [10, 10]
+        this.nodes.forEach(node => {
+            const nodeElement = document.getElementById(node.id);
+            if (nodeElement) {
+                const left = parseFloat(nodeElement.style.left);
+                const top = parseFloat(nodeElement.style.top);
+                nodeElement.style.left = `${left * scaleChange}px`;
+                nodeElement.style.top = `${top * scaleChange}px`;
+            }
         });
+        
+        this.updateCanvasTransform();
+    }
 
-        if (node.type !== 'display') {
-            this.jsPlumbInstance.addEndpoint(node.id, {
-                anchor: "Right",
-                isSource: true,
-                connectionsDetachable: false
-            });
-        }
-
-        if (node.type !== 'prompt') {
-            this.jsPlumbInstance.addEndpoint(node.id, {
-                anchor: "Left",
-                isTarget: true,
-                connectionsDetachable: false
-            });
-        }
+    updateCanvasTransform() {
+        this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.scale})`;
+        this.jsPlumbInstance.setZoom(this.scale);
     }
 
     async fetchAvailableModels() {
@@ -255,116 +142,10 @@ export class WorkflowEditor {
             const response = await fetch('/api/list_models');
             const data = await response.json();
             this.availableModels = data.models ? data.models.map(model => model.name) : [];
+            this.nodeManager.updateAvailableModels(this.availableModels);
         } catch (error) {
             console.error('Error fetching models:', error);
             this.availableModels = [];
         }
-    }
-
-    updateWorkflowList() {
-        fetch('/api/list_workflows')
-            .then(response => response.json())
-            .then(workflows => {
-                this.loadWorkflowSelect.innerHTML = '<option value="">Select a workflow</option>';
-                workflows.forEach(workflow => {
-                    const option = document.createElement('option');
-                    option.value = workflow;
-                    option.textContent = workflow;
-                    this.loadWorkflowSelect.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Error:', error));
-    }
-
-    playWorkflow() {
-        console.log("Playing workflow");
-        const workflow = this.prepareWorkflowForExecution();
-        
-        fetch('/api/execute_workflow', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(workflow),
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Workflow execution response:", data);
-            this.updateNodesWithResults(data);
-        })
-        .catch(error => {
-            console.error('Error executing workflow:', error);
-        });
-    }
-
-    prepareWorkflowForExecution() {
-        return {
-            nodes: this.nodes.map(node => {
-                const nodeElement = document.getElementById(node.id);
-                const nodeData = {
-                    id: node.id,
-                    type: node.type,
-                };
-
-                if (node.type === 'prompt') {
-                    nodeData.prompt = nodeElement.querySelector('textarea').value;
-                } else if (node.type === 'if_else') {
-                    nodeData.condition = nodeElement.querySelector('input').value;
-                } else if (node.type === 'regular') {
-                    nodeData.personality = nodeElement.querySelector('input').value;
-                    nodeData.model = nodeElement.querySelector('select').value;
-                }
-
-                return nodeData;
-            }),
-            connections: this.connections,
-        };
-    }
-
-    updateNodesWithResults(results) {
-        for (const [nodeId, result] of Object.entries(results)) {
-            this.updateNodeWithResult(nodeId, result);
-        }
-    }
-
-    highlightActiveNode(nodeId) {
-        const nodeElement = document.getElementById(nodeId);
-        if (nodeElement) {
-            nodeElement.classList.add('active');
-        }
-    }
-
-    updateNodeWithResult(nodeId, result) {
-        const nodeElement = document.getElementById(nodeId);
-        if (nodeElement) {
-            if (nodeElement.classList.contains('display-node')) {
-                const displayContent = nodeElement.querySelector('.display-content');
-                if (displayContent) {
-                    displayContent.textContent = result.output || JSON.stringify(result);
-                }
-            }
-            nodeElement.classList.remove('active');
-            nodeElement.classList.add('processed');
-            setTimeout(() => nodeElement.classList.remove('processed'), 2000);
-        }
-    }
-
-    onExecutionFinished() {
-        console.log("Workflow execution finished");
-        // You can add any cleanup or UI updates here
-    }
-
-    stopWorkflow() {
-        console.log("Stopping workflow");
-        fetch('/api/stop_execution', {
-            method: 'POST',
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Workflow stopped:", data);
-        })
-        .catch(error => {
-            console.error('Error stopping workflow:', error);
-        });
     }
 }

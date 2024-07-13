@@ -1,0 +1,22 @@
+connections:
+- source: node_1720887190471
+  target: node_1720887194743
+- source: node_1720887192639
+  target: node_1720887190471
+name: ''
+nodes:
+- id: node_1720887190471
+  model: gemma2:latest
+  personality: Make a joke about
+  type: regular
+  x: 720
+  y: 450
+- id: node_1720887192639
+  prompt: Tux Linux
+  type: prompt
+  x: 440
+  y: 450
+- id: node_1720887194743
+  type: display
+  x: 1020
+  y: 470

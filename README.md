@@ -30,6 +30,7 @@ By providing this visual interface, VirtWorkForce aims to make advanced LLM oper
 - Backend: Python with Flask
 - AI Integration: Ollama
 - WebSocket: Flask-SocketIO for real-time updates
+- jsPlumb: For creating visual connections between nodes
 
 ## Setup and Installation
 1. Clone the repository
@@ -38,11 +39,12 @@ By providing this visual interface, VirtWorkForce aims to make advanced LLM oper
    pip install flask flask-socketio ollama pyyaml
    ```
 3. Ensure Ollama is installed and running on your system
-4. Run the Flask application:
+4. Download jsPlumb from [jsDelivr](https://www.jsdelivr.com/package/npm/jsplumb) and place it in the `static/package/dist/js/` directory
+5. Run the Flask application:
    ```
    python app.py
    ```
-5. Open a web browser and navigate to `http://localhost:5000`
+6. Open a web browser and navigate to `http://localhost:5000`
 
 ## Usage
 1. Use the toolbar buttons to add different types of nodes to the canvas
@@ -60,13 +62,19 @@ VirtWorkForce/
 │
 ├── app.py
 ├── static/
-│   ├── index.html
-│   ├── styles.css
 │   ├── main.js
 │   ├── WorkflowEditor.js
 │   ├── NodeManager.js
 │   ├── ConnectionManager.js
-│   └── ExecutionManager.js
+│   ├── WorkflowIO.js
+│   ├── ExecutionManager.js
+│   ├── styles.css
+│   └── package/
+│       └── dist/
+│           └── js/
+│               └── jsplumb.min.js
+├── templates/
+│   └── index.html
 └── workflows/
 ```
 
@@ -84,6 +92,7 @@ Contributions to improve VirtWorkForce are welcome. Please follow these steps:
 - This project was developed with the assistance of Claude.ai, an AI coding assistant.
 - Thanks to the Ollama project for providing the AI model integration capabilities.
 - Inspired by the concept of ComfyUI, adapted for LLM workflows.
+- jsPlumb library source: [jsDelivr - jsPlumb](https://www.jsdelivr.com/package/npm/jsplumb)
 
 ## Contact
 For any questions or feedback, please contact David Hamner.
