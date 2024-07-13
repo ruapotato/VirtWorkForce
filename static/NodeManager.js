@@ -62,7 +62,7 @@ export class NodeManager {
                 <input type="text" placeholder="Personality" value="${node.personality || ''}">
                 <select class="model-select" data-node-id="${node.id}">
                     <option value="">Select a model</option>
-                    ${this.editor.availableModels.map(model => `<option value="${model}" ${node.model === model ? 'selected' : ''}>${model}</option>`).join('')}
+                    ${Array.isArray(this.editor.availableModels) ? this.editor.availableModels.map(model => `<option value="${model}" ${node.model === model ? 'selected' : ''}>${model}</option>`).join('') : ''}
                 </select>
                 <div class="port output-port" data-node-id="${node.id}" data-port-type="output"></div>
                 <span class="port-label output-port-label">Output</span>
@@ -128,5 +128,21 @@ export class NodeManager {
                 selectElement.value = modelName;
             }
         }
+    }
+
+    updateAvailableModels(models) {
+        this.editor.availableModels = models;
+        // Update existing nodes with new model options
+        this.editor.nodes.forEach(node => {
+            if (node.type === 'regular') {
+                const selectElement = document.querySelector(`#node-${node.id} select.model-select`);
+                if (selectElement) {
+                    selectElement.innerHTML = `
+                        <option value="">Select a model</option>
+                        ${models.map(model => `<option value="${model}" ${node.model === model ? 'selected' : ''}>${model}</option>`).join('')}
+                    `;
+                }
+            }
+        });
     }
 }

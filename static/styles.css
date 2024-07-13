@@ -18,7 +18,7 @@ body, html {
     padding: 10px;
     display: flex;
     gap: 10px;
-    border-bottom: 2px solid #e94560;
+    border-bottom: 2px solid #8a2be2; /* Changed to purple */
 }
 
 #canvas {
@@ -32,10 +32,10 @@ body, html {
     position: absolute;
     width: 200px;
     background-color: #0f3460;
-    border: 2px solid #e94560;
+    border: 2px solid #8a2be2; /* Changed to purple */
     border-radius: 10px;
     padding: 10px;
-    box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+    box-shadow: 0 0 15px rgba(138, 43, 226, 0.3); /* Changed to purple */
 }
 
 .node input, .node textarea, .node select {
@@ -43,7 +43,7 @@ body, html {
     margin-bottom: 5px;
     background-color: #16213e;
     color: #ffffff;
-    border: 1px solid #e94560;
+    border: 1px solid #8a2be2; /* Changed to purple */
     border-radius: 5px;
 }
 
@@ -62,7 +62,7 @@ body, html {
 .remove-node {
     background-color: transparent;
     border: none;
-    color: #e94560;
+    color: #8a2be2; /* Changed to purple */
     cursor: pointer;
 }
 
@@ -70,7 +70,7 @@ body, html {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background-color: #e94560;
+    background-color: #8a2be2; /* Changed to purple */
     position: absolute;
     cursor: pointer;
 }
@@ -104,16 +104,16 @@ body, html {
 .connection {
     position: absolute;
     height: 2px;
-    background-color: #e94560;
+    background-color: #8a2be2; /* Changed to purple */
     z-index: 1;
     pointer-events: none;
     transform-origin: left center;
-    box-shadow: 0 0 5px #e94560;
+    box-shadow: 0 0 5px #8a2be2; /* Changed to purple */
 }
 
 .neon-button {
     background-color: transparent;
-    border: 2px solid #e94560;
+    border: 2px solid #8a2be2; /* Changed to purple */
     color: #ffffff;
     padding: 5px 10px;
     border-radius: 5px;
@@ -121,15 +121,20 @@ body, html {
     transition: all 0.3s ease;
 }
 
+#canvas {
+    min-width: 100%;
+    min-height: 100%;
+}
+
 .neon-button:hover {
-    background-color: #e94560;
+    background-color: #8a2be2; /* Changed to purple */
     color: #1a1a2e;
-    box-shadow: 0 0 10px #e94560;
+    box-shadow: 0 0 10px #8a2be2; /* Changed to purple */
 }
 
 .neon-input, .neon-select {
     background-color: #16213e;
-    border: 2px solid #e94560;
+    border: 2px solid #8a2be2; /* Changed to purple */
     color: #ffffff;
     padding: 5px;
     border-radius: 5px;

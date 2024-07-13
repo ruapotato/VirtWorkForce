@@ -11,7 +11,6 @@ export class WorkflowEditor {
         this.addPromptNodeButton = document.getElementById('add-prompt-node');
         this.addDisplayNodeButton = document.getElementById('add-display-node');
         this.addIfElseNodeButton = document.getElementById('add-if-else-node');
-        this.addModelLoaderNodeButton = document.getElementById('add-model-loader-node');
         this.saveWorkflowButton = document.getElementById('save-workflow');
         this.loadWorkflowSelect = document.getElementById('load-workflow');
         this.playButton = document.getElementById('play-workflow');
@@ -26,7 +25,6 @@ export class WorkflowEditor {
         this.addPromptNodeButton.addEventListener('click', () => this.nodeManager.addNode('prompt'));
         this.addDisplayNodeButton.addEventListener('click', () => this.nodeManager.addNode('display'));
         this.addIfElseNodeButton.addEventListener('click', () => this.nodeManager.addNode('if_else'));
-        this.addModelLoaderNodeButton.addEventListener('click', () => this.nodeManager.addNode('model_loader'));
         this.saveWorkflowButton.addEventListener('click', () => this.saveWorkflow());
         this.loadWorkflowSelect.addEventListener('change', (e) => this.loadWorkflow(e.target.value));
         this.playButton.addEventListener('click', () => this.executionManager.playWorkflow());
@@ -51,9 +49,11 @@ export class WorkflowEditor {
         try {
             const response = await fetch('/api/list_models');
             const data = await response.json();
-            this.availableModels = data.models.map(model => model.name);
+            this.availableModels = data.models ? data.models.map(model => model.name) : [];
+            this.nodeManager.updateAvailableModels(this.availableModels);
         } catch (error) {
             console.error('Error fetching models:', error);
+            this.availableModels = [];
         }
     }
 
@@ -90,8 +90,20 @@ export class WorkflowEditor {
         e.preventDefault();
         const delta = e.deltaY;
         const zoomFactor = 0.1;
+        const oldScale = this.scale;
         this.scale += delta > 0 ? -zoomFactor : zoomFactor;
         this.scale = Math.max(0.1, Math.min(this.scale, 2));  // Limit zoom between 0.1x and 2x
+        
+        const scaleChange = this.scale / oldScale;
+        
+        this.nodes.forEach(node => {
+            const nodeElement = document.getElementById(`node-${node.id}`);
+            const left = parseFloat(nodeElement.style.left);
+            const top = parseFloat(nodeElement.style.top);
+            nodeElement.style.left = `${left * scaleChange}px`;
+            nodeElement.style.top = `${top * scaleChange}px`;
+        });
+        
         this.updateCanvasTransform();
     }
 
@@ -101,55 +113,55 @@ export class WorkflowEditor {
     }
 
     saveWorkflow() {
-    const workflow = {
-        name: this.workflowNameInput.value,
-        nodes: this.nodes.map(node => {
-            const nodeElement = document.getElementById(`node-${node.id}`);
-            const baseNode = {
-                id: node.id,
-                type: node.type,
-                x: (parseInt(nodeElement.style.left) - this.offsetX) / this.scale,
-                y: (parseInt(nodeElement.style.top) - this.offsetY) / this.scale,
-                model: node.model, // Include the model for all nodes
-            };
+        const workflow = {
+            name: this.workflowNameInput.value,
+            nodes: this.nodes.map(node => {
+                const nodeElement = document.getElementById(`node-${node.id}`);
+                const baseNode = {
+                    id: node.id,
+                    type: node.type,
+                    x: (parseInt(nodeElement.style.left) - this.offsetX) / this.scale,
+                    y: (parseInt(nodeElement.style.top) - this.offsetY) / this.scale,
+                    model: node.model,
+                };
 
-            switch (node.type) {
-                case 'regular':
-                    return {
-                        ...baseNode,
-                        personality: nodeElement.querySelector('input[placeholder="Personality"]').value,
-                    };
-                case 'prompt':
-                    return {
-                        ...baseNode,
-                        prompt: nodeElement.querySelector('textarea').value,
-                    };
-                case 'if_else':
-                    return {
-                        ...baseNode,
-                        condition: nodeElement.querySelector('input[placeholder="Enter condition"]').value,
-                    };
-                default:
-                    return baseNode;
-            }
-        }),
-        connections: this.connections
-    };
-    
-    console.log("Saving workflow:", workflow);
-    
-    fetch('/api/save_workflow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(workflow)
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.message);
-        this.updateWorkflowList();
-    })
-    .catch(error => console.error('Error:', error));
-}
+                switch (node.type) {
+                    case 'regular':
+                        return {
+                            ...baseNode,
+                            personality: nodeElement.querySelector('input[placeholder="Personality"]').value,
+                        };
+                    case 'prompt':
+                        return {
+                            ...baseNode,
+                            prompt: nodeElement.querySelector('textarea').value,
+                        };
+                    case 'if_else':
+                        return {
+                            ...baseNode,
+                            condition: nodeElement.querySelector('input[placeholder="Enter condition"]').value,
+                        };
+                    default:
+                        return baseNode;
+                }
+            }),
+            connections: this.connections
+        };
+        
+        console.log("Saving workflow:", workflow);
+        
+        fetch('/api/save_workflow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(workflow)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            this.updateWorkflowList();
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
     loadWorkflow(filename) {
         if (!filename) return;
@@ -164,8 +176,8 @@ export class WorkflowEditor {
                 workflow.nodes.forEach(node => {
                     this.nodes.push(node);
                     this.nodeManager.renderNode(node);
-                    if (node.type === 'model_loader') {
-                        const selectElement = document.querySelector(`#node-${node.id} select`);
+                    if (node.type === 'regular') {
+                        const selectElement = document.querySelector(`#node-${node.id} select.model-select`);
                         if (selectElement) {
                             selectElement.value = node.model;
                             this.nodeManager.updateModelSelection(node.id, node.model);
@@ -179,6 +191,7 @@ export class WorkflowEditor {
                 this.workflowNameInput.value = workflow.name;
                 
                 console.log("Loaded workflow:", workflow);
+                this.updateCanvasSize();
             })
             .catch(error => console.error('Error:', error));
     }
@@ -196,5 +209,12 @@ export class WorkflowEditor {
                 });
             })
             .catch(error => console.error('Error:', error));
+    }
+
+    updateCanvasSize() {
+        const maxX = Math.max(...this.nodes.map(node => node.x + 250));  // 250 is an estimated node width
+        const maxY = Math.max(...this.nodes.map(node => node.y + 150));  // 150 is an estimated node height
+        this.canvas.style.width = `${Math.max(window.innerWidth, maxX)}px`;
+        this.canvas.style.height = `${Math.max(window.innerHeight, maxY)}px`;
     }
 }
