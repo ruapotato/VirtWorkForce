@@ -126,6 +126,10 @@ body, html {
     min-height: 100%;
 }
 
+.node.processed {
+    box-shadow: 0 0 10px #8a2be2;
+}
+
 .neon-button:hover {
     background-color: #8a2be2; /* Changed to purple */
     color: #1a1a2e;

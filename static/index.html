@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Futuristic LLM Workflow Editor</title>
+    <title>VirtWorkForce</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link rel="stylesheet" href="static/package/css/jsplumbtoolkit-defaults.css">
+    <script src="static/package/dist/js/jsplumb.min.js"></script>
 </head>
 <body>
     <div id="workflow-editor">
@@ -14,18 +15,16 @@
             <button id="add-prompt-node" class="neon-button">Add Prompt Node</button>
             <button id="add-display-node" class="neon-button">Add Display Node</button>
             <button id="add-if-else-node" class="neon-button">Add If-Else Node</button>
-            <input type="text" id="workflow-name" placeholder="Workflow Name" class="neon-input">
             <button id="save-workflow" class="neon-button">Save Workflow</button>
             <select id="load-workflow" class="neon-select">
                 <option value="">Select a workflow</option>
             </select>
             <button id="play-workflow" class="neon-button">Play Workflow</button>
-            <button id="stop-workflow" class="neon-button" disabled>Stop Workflow</button>
+            <button id="stop-workflow" class="neon-button">Stop Workflow</button>
+            <input id="workflow-name" type="text" placeholder="Workflow Name" class="neon-input">
         </div>
-        <div id="canvas">
-            <!-- Nodes will be added here dynamically -->
-        </div>
+        <div id="canvas"></div>
     </div>
-    <script type="module" src="main.js"></script>
+    <script type="module" src="static/main.js"></script>
 </body>
 </html>
