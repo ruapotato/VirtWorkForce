@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic LLM Workflow Editor</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div id="workflow-editor">
+        <div id="toolbar">
+            <button id="add-node" class="neon-button">Add Node</button>
+            <button id="add-prompt-node" class="neon-button">Add Prompt Node</button>
+            <button id="add-display-node" class="neon-button">Add Display Node</button>
+            <button id="add-if-else-node" class="neon-button">Add If-Else Node</button>
+            <button id="add-model-loader-node" class="neon-button">Add Model Loader Node</button>
+            <input type="text" id="workflow-name" placeholder="Workflow Name" class="neon-input">
+            <button id="save-workflow" class="neon-button">Save Workflow</button>
+            <select id="load-workflow" class="neon-select">
+                <option value="">Select a workflow</option>
+            </select>
+            <button id="play-workflow" class="neon-button">Play Workflow</button>
+            <button id="stop-workflow" class="neon-button" disabled>Stop Workflow</button>
+        </div>
+        <div id="canvas">
+            <!-- Nodes will be added here dynamically -->
+        </div>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
