@@ -15,9 +15,9 @@ body, html {
 
 #toolbar {
     background-color: #16213e;
-    padding: 15px;
+    padding: 10px;
     display: flex;
-    gap: 15px;
+    gap: 10px;
     border-bottom: 2px solid #e94560;
 }
 
@@ -26,40 +26,37 @@ body, html {
     position: relative;
     background-color: #1a1a2e;
     overflow: hidden;
-    padding: 20px;
 }
 
 .node {
     position: absolute;
-    width: 220px;
+    width: 200px;
     background-color: #0f3460;
     border: 2px solid #e94560;
     border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+    padding: 10px;
+    box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
 }
 
 .node input, .node textarea, .node select {
-    width: calc(100% - 10px);
-    margin-bottom: 10px;
+    width: 100%;
+    margin-bottom: 5px;
     background-color: #16213e;
     color: #ffffff;
     border: 1px solid #e94560;
     border-radius: 5px;
-    padding: 8px 5px;
 }
 
 .node-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 .node-title {
     font-weight: bold;
     color: #ffffff;
-    font-size: 14px;
 }
 
 .remove-node {
@@ -67,138 +64,80 @@ body, html {
     border: none;
     color: #e94560;
     cursor: pointer;
-    font-size: 16px;
-    padding: 5px;
 }
 
 .port {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background-color: #e94560;
     position: absolute;
     cursor: pointer;
-    box-shadow: 0 0 5px #e94560;
 }
 
 .port-label {
     position: absolute;
-    font-size: 11px;
+    font-size: 10px;
     color: #ffffff;
     pointer-events: none;
 }
 
 .input-port, .input-port-label {
-    left: -18px;
+    left: -16px;
 }
 
 .output-port, .output-port-label {
-    right: -18px;
+    right: -16px;
 }
 
 .input-port-label {
     text-align: right;
-    right: calc(100% + 25px);
-    width: 70px;
+    right: calc(100% + 20px);
+    width: 60px;
 }
 
 .output-port-label {
-    left: calc(100% + 25px);
-    width: 70px;
+    left: calc(100% + 20px);
+    width: 60px;
 }
 
 .connection {
     position: absolute;
-    height: 3px;
+    height: 2px;
     background-color: #e94560;
     z-index: 1;
     pointer-events: none;
     transform-origin: left center;
-    box-shadow: 0 0 8px #e94560;
+    box-shadow: 0 0 5px #e94560;
 }
 
 .neon-button {
     background-color: transparent;
     border: 2px solid #e94560;
     color: #ffffff;
-    padding: 8px 15px;
+    padding: 5px 10px;
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 14px;
-    letter-spacing: 0.5px;
 }
 
 .neon-button:hover {
     background-color: #e94560;
     color: #1a1a2e;
-    box-shadow: 0 0 15px #e94560;
+    box-shadow: 0 0 10px #e94560;
 }
 
 .neon-input, .neon-select {
     background-color: #16213e;
     border: 2px solid #e94560;
     color: #ffffff;
-    padding: 8px;
+    padding: 5px;
     border-radius: 5px;
-    font-size: 14px;
 }
 
 #workflow-list {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 10px;
+    right: 10px;
     z-index: 1000;
-    background-color: #16213e;
-    padding: 10px;
-    border-radius: 5px;
-    border: 2px solid #e94560;
-}
-
-/* New styles for better spacing and cleaner look */
-.node .display-content {
-    background-color: #16213e;
-    border: 1px solid #e94560;
-    border-radius: 5px;
-    padding: 10px;
-    margin-top: 10px;
-    max-height: 150px;
-    overflow-y: auto;
-}
-
-.node textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-.node select {
-    appearance: none;
-    padding-right: 25px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23e94560'%3E%3Cpath d='M6 9L0 0h12z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-}
-
-/* Styles for active nodes during execution */
-.node.active {
-    box-shadow: 0 0 25px rgba(233, 69, 96, 0.6);
-}
-
-/* Improved scrollbar styles */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: #16213e;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #e94560;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #ff6b6b;
 }
