@@ -73,12 +73,31 @@ export class WorkflowIO {
                 });
 
                 workflow.connections.forEach(conn => {
-                    this.editor.jsPlumbInstance.connect({
-                        source: conn.source,
-                        target: conn.target,
-                        sourceEndpoint: conn.sourceEndpoint,
-                        targetEndpoint: conn.targetEndpoint
-                    });
+                    const sourceNode = this.editor.nodes.find(n => n.id === conn.source);
+                    const targetNode = this.editor.nodes.find(n => n.id === conn.target);
+                    
+                    if (sourceNode && targetNode) {
+                        let sourceEndpoint, targetEndpoint;
+                        
+                        if (sourceNode.type === 'if_else') {
+                            sourceEndpoint = this.editor.jsPlumbInstance.getEndpoints(conn.source).find(ep => ep.getParameter('portType') === conn.sourceEndpoint);
+                        } else {
+                            sourceEndpoint = this.editor.jsPlumbInstance.getEndpoints(conn.source)[0];
+                        }
+                        
+                        targetEndpoint = this.editor.jsPlumbInstance.getEndpoints(conn.target)[0];
+                        
+                        if (sourceEndpoint && targetEndpoint) {
+                            this.editor.jsPlumbInstance.connect({
+                                source: sourceEndpoint,
+                                target: targetEndpoint
+                            });
+                        } else {
+                            console.error(`Unable to find endpoints for connection: ${conn.source} -> ${conn.target}`);
+                        }
+                    } else {
+                        console.error(`Unable to find nodes for connection: ${conn.source} -> ${conn.target}`);
+                    }
                 });
 
                 this.editor.workflowNameInput.value = workflow.name;
