@@ -23,17 +23,18 @@ class WorkerBlock:
         self.model = model
         self.context = []
 
-    def execute(self, input_data: str = "") -> Dict[str, str]:
+    def execute(self, input_data: str = "") -> Dict[str, Any]:
         app.logger.debug(f"Executing block: {self.id}, Type: {self.type}, Model: {self.model}")
         if self.type == 'prompt':
             return {"output": self.prompt}
         elif self.type == 'display':
             return {"output": input_data}
         elif self.type == 'if_else':
-            if self.condition.lower() in input_data.lower():
-                return {"present": input_data}
-            else:
-                return {"absent": input_data}
+            condition_met = self.condition.lower() in input_data.lower()
+            return {
+                "condition_met": condition_met,
+                "output": input_data
+            }
         elif self.type == 'regular':
             if not self.model:
                 app.logger.error(f"No model selected for node {self.id}")
@@ -90,53 +91,62 @@ def execute_workflow():
     app.logger.debug(f"Received workflow: {workflow}")
     results = {}
     workers = {}
-    
+
+    def create_worker(node):
+        return WorkerBlock(
+            str(node['id']),
+            node['type'],
+            node.get('personality', ''),
+            node.get('prompt', ''),
+            node.get('condition', ''),
+            node.get('model', '')
+        )
+
+    def get_input_data(node_id):
+        input_data = []
+        for connection in workflow['connections']:
+            if connection['target'] == node_id:
+                source_result = results.get(connection['source'], {})
+                input_data.append(source_result.get('output', ''))
+        return '\n'.join(input_data)
+
     def execute_node(node_id):
-        global stop_execution
         if stop_execution:
-            app.logger.info("Execution stopped by user")
-            return {"output": "Execution stopped by user"}
+            return
+
+        node = next((n for n in workflow['nodes'] if n['id'] == node_id), None)
+        if not node:
+            return
 
         app.logger.debug(f"Executing node: {node_id}")
         socketio.emit('node_active', {'node_id': node_id})
-        
-        if node_id in results:
-            app.logger.debug(f"Node {node_id} already executed, returning cached result")
-            return results[node_id]
-        
-        node = next((n for n in workflow['nodes'] if str(n['id']) == str(node_id)), None)
-        if not node:
-            app.logger.error(f"Node {node_id} not found in workflow")
-            return {"output": f"Error: Node {node_id} not found"}
 
         if node_id not in workers:
-            workers[node_id] = WorkerBlock(
-                str(node['id']), 
-                node['type'], 
-                node.get('personality', ''), 
-                node.get('prompt', ''), 
-                node.get('condition', ''),
-                node.get('model', '')
-            )
-            app.logger.debug(f"Created worker for node {node_id} with model {node.get('model', '')}")
+            workers[node_id] = create_worker(node)
 
-        input_data = []
-        for connection in workflow['connections']:
-            if str(connection['target']) == str(node_id):
-                input_data.append(execute_node(connection['source']).get('output', ''))
-        
-        input_str = '\n'.join(input_data)
-        results[str(node_id)] = workers[node_id].execute(input_str.strip())
-        app.logger.debug(f"Node {node_id} execution result: {results[str(node_id)]}")
-        
-        socketio.emit('node_result', {'node_id': node_id, 'result': results[str(node_id)]})
-        
-        return results[str(node_id)]
+        input_data = get_input_data(node_id)
+        result = workers[node_id].execute(input_data.strip())
+        results[node_id] = result
 
-    for node in workflow['nodes']:
-        if stop_execution:
-            break
-        execute_node(str(node['id']))
+        app.logger.debug(f"Node {node_id} execution result: {result}")
+        socketio.emit('node_result', {'node_id': node_id, 'result': result})
+
+        if node['type'] == 'if_else':
+            condition_met = result['condition_met']
+            for connection in workflow['connections']:
+                if connection['source'] == node_id:
+                    if (condition_met and connection.get('sourceEndpoint') == 'condition_true') or \
+                       (not condition_met and connection.get('sourceEndpoint') == 'condition_false'):
+                        execute_node(connection['target'])
+        else:
+            for connection in workflow['connections']:
+                if connection['source'] == node_id:
+                    execute_node(connection['target'])
+
+    # Start execution from nodes without incoming connections
+    start_nodes = set(node['id'] for node in workflow['nodes']) - set(conn['target'] for conn in workflow['connections'])
+    for start_node in start_nodes:
+        execute_node(start_node)
 
     socketio.emit('execution_finished')
     app.logger.info("Workflow execution completed")

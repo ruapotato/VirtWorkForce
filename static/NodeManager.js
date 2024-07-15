@@ -84,29 +84,31 @@ export class NodeManager {
                 maxConnections: -1
             });
         }
-
+        
         if (node.type !== 'display') {
-            this.editor.jsPlumbInstance.addEndpoint(node.id, {
-                anchor: "Right",
-                isSource: true,
-                connectionsDetachable: false,
-                maxConnections: -1
-            });
-        }
-
-        if (node.type === 'if_else') {
-            this.editor.jsPlumbInstance.addEndpoint(node.id, {
-                anchor: [1, 0.25, 1, 0],
-                isSource: true,
-                connectionsDetachable: false,
-                maxConnections: -1
-            });
-            this.editor.jsPlumbInstance.addEndpoint(node.id, {
-                anchor: [1, 0.75, 1, 0],
-                isSource: true,
-                connectionsDetachable: false,
-                maxConnections: -1
-            });
+            if (node.type === 'if_else') {
+                this.editor.jsPlumbInstance.addEndpoint(node.id, {
+                    anchor: [1, 0.25, 1, 0],
+                    isSource: true,
+                    connectionsDetachable: false,
+                    maxConnections: -1,
+                    parameters: { portType: 'condition_true' }
+                });
+                this.editor.jsPlumbInstance.addEndpoint(node.id, {
+                    anchor: [1, 0.75, 1, 0],
+                    isSource: true,
+                    connectionsDetachable: false,
+                    maxConnections: -1,
+                    parameters: { portType: 'condition_false' }
+                });
+            } else {
+                this.editor.jsPlumbInstance.addEndpoint(node.id, {
+                    anchor: "Right",
+                    isSource: true,
+                    connectionsDetachable: false,
+                    maxConnections: -1
+                });
+            }
         }
     }
 

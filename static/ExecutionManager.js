@@ -5,7 +5,7 @@ export class ExecutionManager {
         this.editor = editor;
         this.socket = io();
         this.socket.on('node_active', (data) => this.highlightActiveNode(data.node_id));
-        this.socket.on('node_result', (data) => this.editor.nodeManager.updateDisplayNode(data.node_id, data.result));
+        this.socket.on('node_result', (data) => this.handleNodeResult(data));
         this.socket.on('execution_finished', () => this.executionFinished());
     }
 
@@ -19,9 +19,34 @@ export class ExecutionManager {
         }
     }
 
+    handleNodeResult(data) {
+        const node = this.editor.nodes.find(n => n.id === data.node_id);
+        if (node.type === 'if_else') {
+            this.highlightIfElseOutput(data.node_id, data.result.condition_met);
+        } else if (node.type === 'display') {
+            this.editor.nodeManager.updateDisplayNode(data.node_id, data.result);
+        }
+        // Log results for all node types
+        console.log(`Node ${data.node_id} (${node.type}) result:`, data.result);
+    }
+
+    highlightIfElseOutput(nodeId, conditionMet) {
+        const node = document.getElementById(nodeId);
+        if (node) {
+            const trueOutput = node.querySelector('.output-port[data-port-type="condition_true"]');
+            const falseOutput = node.querySelector('.output-port[data-port-type="condition_false"]');
+            
+            if (trueOutput) trueOutput.classList.toggle('active', conditionMet);
+            if (falseOutput) falseOutput.classList.toggle('active', !conditionMet);
+        }
+    }
+
     executionFinished() {
         document.querySelectorAll('.node').forEach(node => {
             node.classList.remove('active');
+        });
+        document.querySelectorAll('.output-port').forEach(port => {
+            port.classList.remove('active');
         });
         this.editor.playButton.disabled = false;
         this.editor.stopButton.disabled = true;
@@ -31,6 +56,13 @@ export class ExecutionManager {
         console.log('Starting workflow execution');
         this.editor.playButton.disabled = true;
         this.editor.stopButton.disabled = false;
+
+        // Clear all display nodes before starting execution
+        this.editor.nodes.forEach(node => {
+            if (node.type === 'display') {
+                this.editor.nodeManager.updateDisplayNode(node.id, { output: '' });
+            }
+        });
 
         const workflow = this.prepareWorkflowForExecution();
 
@@ -69,20 +101,20 @@ export class ExecutionManager {
                     x: parseInt(nodeElement.style.left),
                     y: parseInt(nodeElement.style.top),
                 };
-
+        
                 switch (node.type) {
                     case 'prompt':
                         preparedNode.prompt = nodeElement.querySelector('textarea').value;
                         break;
                     case 'if_else':
-                        preparedNode.condition = nodeElement.querySelector('input').value;
+                        preparedNode.condition = nodeElement.querySelector('input[placeholder="Enter condition"]').value;
                         break;
                     case 'regular':
-                        preparedNode.personality = nodeElement.querySelector('input').value;
-                        preparedNode.model = nodeElement.querySelector('select').value;
+                        preparedNode.personality = nodeElement.querySelector('input[placeholder="Personality"]').value;
+                        preparedNode.model = nodeElement.querySelector('select.model-select').value;
                         break;
                 }
-
+        
                 return preparedNode;
             }),
             connections: this.editor.jsPlumbInstance.getConnections().map(conn => ({
