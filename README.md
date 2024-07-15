@@ -6,6 +6,8 @@ David Hamner
 ## Description
 VirtWorkForce is a web-based visual workflow editor for Language Learning Models (LLMs), inspired by the concept of ComfyUI but tailored for text-based AI models. It allows users to create, edit, and execute complex LLM workflows visually, providing a powerful and intuitive interface for AI-driven text processing and generation tasks.
 
+![VirtWorkForce Example Workflow](./img/example.png)
+
 ## ComfyUI for LLMs
 While ComfyUI focuses on creating workflows for image generation and manipulation, VirtWorkForce applies a similar node-based approach to LLM operations. This allows users to:
 
@@ -33,18 +35,27 @@ By providing this visual interface, VirtWorkForce aims to make advanced LLM oper
 - jsPlumb: For creating visual connections between nodes
 
 ## Setup and Installation
-1. Clone the repository
-2. Install the required Python packages:
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/VirtWorkForce.git
+   cd VirtWorkForce
+   ```
+2. Create a virtual environment and activate it:
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
+3. Install the required Python packages:
    ```
    pip install flask flask-socketio ollama pyyaml
    ```
-3. Ensure Ollama is installed and running on your system
-4. Download jsPlumb from [jsDelivr](https://www.jsdelivr.com/package/npm/jsplumb) and place it in the `static/package/dist/js/` directory
-5. Run the Flask application:
+4. Ensure Ollama is installed and running on your system. Visit [Ollama's official website](https://ollama.ai/) for installation instructions.
+5. Download jsPlumb from [jsDelivr](https://www.jsdelivr.com/package/npm/jsplumb) and place it in the `static/package/dist/js/` directory
+6. Run the Flask application:
    ```
    python app.py
    ```
-6. Open a web browser and navigate to `http://localhost:5000`
+7. Open a web browser and navigate to `http://localhost:5000`
 
 ## Usage
 1. Use the toolbar buttons to add different types of nodes to the canvas
@@ -75,15 +86,18 @@ VirtWorkForce/
 │               └── jsplumb.min.js
 ├── templates/
 │   └── index.html
-└── workflows/
+├── workflows/
+└── img/
+    └── example.png
 ```
 
 ## Contributing
 Contributions to improve VirtWorkForce are welcome. Please follow these steps:
 1. Fork the repository
-2. Create a new branch
-3. Make your changes and commit them
-4. Push to your fork and submit a pull request
+2. Create a new branch (`git checkout -b feature/AmazingFeature`)
+3. Make your changes and commit them (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a pull request
 
 ## License
 [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html)
@@ -95,4 +109,14 @@ Contributions to improve VirtWorkForce are welcome. Please follow these steps:
 - jsPlumb library source: [jsDelivr - jsPlumb](https://www.jsdelivr.com/package/npm/jsplumb)
 
 ## Contact
-For any questions or feedback, please contact David Hamner.
+For any questions or feedback, please open an issue in the GitHub repository or contact David Hamner directly.
+
+## Troubleshooting
+If you encounter any issues while setting up or running VirtWorkForce, please check the following:
+
+1. Ensure all dependencies are correctly installed
+2. Verify that Ollama is running and accessible
+3. Check the console for any JavaScript errors
+4. Review the Flask server logs for backend errors
+
+If problems persist, please open an issue on the GitHub repository with a detailed description of the problem and steps to reproduce it.
