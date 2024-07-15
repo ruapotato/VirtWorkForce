@@ -82,10 +82,10 @@ export class WorkflowIO {
                         if (sourceNode.type === 'if_else') {
                             sourceEndpoint = this.editor.jsPlumbInstance.getEndpoints(conn.source).find(ep => ep.getParameter('portType') === conn.sourceEndpoint);
                         } else {
-                            sourceEndpoint = this.editor.jsPlumbInstance.getEndpoints(conn.source)[0];
+                            sourceEndpoint = this.editor.jsPlumbInstance.getEndpoints(conn.source).find(ep => ep.getParameter('portType') === 'output');
                         }
                         
-                        targetEndpoint = this.editor.jsPlumbInstance.getEndpoints(conn.target)[0];
+                        targetEndpoint = this.editor.jsPlumbInstance.getEndpoints(conn.target).find(ep => ep.getParameter('portType') === 'input');
                         
                         if (sourceEndpoint && targetEndpoint) {
                             this.editor.jsPlumbInstance.connect({

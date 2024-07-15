@@ -76,47 +76,37 @@ export class NodeManager {
     }
 
     addEndpoints(node) {
-        const commonEndpointOptions = {
-            endpoint: "Dot",
-            paintStyle: { fill: "#8a2be2" },
-            connectorStyle: { stroke: "#8a2be2", strokeWidth: 2 },
-            connectorOverlays: [
-                ["Arrow", { location: 1, width: 10, length: 10 }]
-            ],
-            maxConnections: -1
-        };
-
         if (node.type !== 'prompt') {
             this.editor.jsPlumbInstance.addEndpoint(node.id, {
-                ...commonEndpointOptions,
-                isTarget: true,
                 anchor: "Left",
-                parameters: { portType: 'input' }
+                isTarget: true,
+                connectionsDetachable: false,
+                maxConnections: -1
             });
         }
-        
+
         if (node.type !== 'display') {
-            if (node.type === 'if_else') {
-                this.editor.jsPlumbInstance.addEndpoint(node.id, {
-                    ...commonEndpointOptions,
-                    isSource: true,
-                    anchor: [1, 0.25, 1, 0],
-                    parameters: { portType: 'condition_true' }
-                });
-                this.editor.jsPlumbInstance.addEndpoint(node.id, {
-                    ...commonEndpointOptions,
-                    isSource: true,
-                    anchor: [1, 0.75, 1, 0],
-                    parameters: { portType: 'condition_false' }
-                });
-            } else {
-                this.editor.jsPlumbInstance.addEndpoint(node.id, {
-                    ...commonEndpointOptions,
-                    isSource: true,
-                    anchor: "Right",
-                    parameters: { portType: 'output' }
-                });
-            }
+            this.editor.jsPlumbInstance.addEndpoint(node.id, {
+                anchor: "Right",
+                isSource: true,
+                connectionsDetachable: false,
+                maxConnections: -1
+            });
+        }
+
+        if (node.type === 'if_else') {
+            this.editor.jsPlumbInstance.addEndpoint(node.id, {
+                anchor: [1, 0.25, 1, 0],
+                isSource: true,
+                connectionsDetachable: false,
+                maxConnections: -1
+            });
+            this.editor.jsPlumbInstance.addEndpoint(node.id, {
+                anchor: [1, 0.75, 1, 0],
+                isSource: true,
+                connectionsDetachable: false,
+                maxConnections: -1
+            });
         }
     }
 
@@ -131,11 +121,7 @@ export class NodeManager {
         if (nodeElement && nodeElement.classList.contains('display-node')) {
             const displayContent = nodeElement.querySelector('.display-content');
             if (displayContent) {
-                if (result.output === "" || result.output === '{"output":""}') {
-                    displayContent.textContent = "";
-                } else {
-                    displayContent.textContent = result.output || JSON.stringify(result);
-                }
+                displayContent.textContent = result.output || JSON.stringify(result);
                 console.log(`Updated display node ${nodeId} with result:`, result);
             }
         }

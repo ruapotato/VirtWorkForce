@@ -1,0 +1,73 @@
+connections:
+- source: node-1721005092619
+  target: node-1721005091900
+- source: node-1721005091900
+  target: node-1721005094115
+- source: node-1721005094115
+  sourceEndpoint: condition_true
+  target: node-1721005093499
+- source: node-1721005094115
+  sourceEndpoint: condition_false
+  target: node-1721005093227
+- source: node-1721005094115
+  sourceEndpoint: condition_true
+  target: node-1721005152627
+- source: node-1721005152627
+  target: node-1721005161331
+- source: node-1721005094115
+  sourceEndpoint: condition_false
+  target: node-1721005179499
+- source: node-1721005179499
+  target: node-1721005187787
+name: If_else
+nodes:
+- id: node-1721005091900
+  model: gemma2:latest
+  personality: 'Tell me a joke about:'
+  type: regular
+  x: 560
+  y: 190
+- id: node-1721005092619
+  model: ''
+  prompt: Tux
+  type: prompt
+  x: 130
+  y: 190
+- id: node-1721005093227
+  model: ''
+  type: display
+  x: 1240
+  y: 360
+- id: node-1721005093499
+  model: ''
+  type: display
+  x: 1220
+  y: 80
+- condition: Tux
+  id: node-1721005094115
+  model: ''
+  type: if_else
+  x: 860
+  y: 170
+- id: node-1721005152627
+  model: gemma2:latest
+  personality: What is this about?
+  type: regular
+  x: 830
+  y: 490
+- id: node-1721005161331
+  model: ''
+  type: display
+  x: 1190
+  y: 560
+- id: node-1721005179499
+  model: gemma2:latest
+  personality: Is this funny?
+  type: regular
+  x: 820
+  y: 700
+- id: node-1721005187787
+  model: ''
+  type: display
+  x: 1180
+  y: 830

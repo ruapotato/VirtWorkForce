@@ -1,0 +1,23 @@
+--- static/NodeManager.js
++++ static/NodeManager.js
+@@ -31,18 +31,14 @@ export class NodeManager {
+                 isSource: true,
+                 connectionsDetachable: false,
+                 maxConnections: -1,
++                parameters: { portType: 'condition_true' }
+             });
+             this.editor.jsPlumbInstance.addEndpoint(node.id, {
+                 anchor: [1, 0.75, 1, 0],
+                 isSource: true,
+                 connectionsDetachable: false,
+                 maxConnections: -1,
++                parameters: { portType: 'condition_false' }
+             });
+-            this.editor.jsPlumbInstance.addEndpoint(node.id, {
+-                anchor: [1, 0.5, 1, 0],
+-                isSource: true,
+-                connectionsDetachable: false,
+-                maxConnections: -1,
+-            });
+         }
+ 
